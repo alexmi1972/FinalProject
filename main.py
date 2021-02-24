@@ -3,73 +3,103 @@ from bs4 import BeautifulSoup as bs
 import xlsxwriter
 import pandas as pd
 
-name_list = []
-old_price_list = []
-new_price_list = []
-discount_list = []
-reviews_list = []
-link_list = []
 
-product = {"PRODUCT NAME": None,
-               "OLD PRICE": None,
-               "NEW PRICE": None,
-               "DISCOUNT": None,
-               "REVIEWS": None,
-               "LINK": None}
+products_list = []
+
 
 def get_emag_product_url(nume_produs,numar_pagini):
     url = requests.get(f"https://www.emag.ro/{nume_produs}/p{numar_pagini}/c")
     return bs(url.content)
 
 def get_product_information(html_code):
-
     for product_code in html_code.find_all("div", class_="card-item js-product-data"):
+        product = {}
         name = product_code["data-name"]
-        name_list.append(name)
+        product["PRODUCT NAME"] = name
         try:
             old_price = product_code.find("p", class_="product-old-price").s.text
-            old_price_list.append(old_price)
+            old_price = old_price.replace(".", "")
+            old_price = list(old_price)
+            old_price.insert(-6, ".")
+            old_price = "".join(old_price)
+            product["OLD PRICE"] = old_price
         except AttributeError:
-            old_price_list.append("No discount")
+            product["OLD PRICE"] = "NO DISCOUNT"
         new_price = product_code.find("p", class_="product-new-price").text
-        new_price_list.append(new_price)
+        new_price = new_price.replace(".", "")
+        new_price = list(new_price)
+        new_price.insert(-6, ".")
+        new_price = "".join(new_price)
+        product["NEW PRICE"] = new_price
         try:
             discount = product_code.find("span", class_="product-this-deal").text
-            discount_list.append(discount)
+            discount = discount.replace("(", "")
+            discount = discount.replace(")", "")
+            product["DISCOUNT"] = discount
         except AttributeError:
-            discount_list.append("No discount")
+            product["DISCOUNT"] = "NO DISCOUNT"
         link = product_code.find("a", class_="product-title js-product-url")["href"]
-        link_list.append(link)
+        product["LINK"] = link
         try:
             reviews = product_code.find("div", class_="star-rating-text").span.text
-            reviews_list.append(reviews)
+            product["REVIEWS"] = reviews
         except AttributeError:
-            reviews_list.append("No reviews")
-
+            product["REVIEWS"] = "NO REVIEWS"
+        products_list.append(product)
     return True
 
-def sort_information(column):
-    dataframe = pd.DataFrame(product)
-    dataframe.sort_values(by=column, ascending=True)
+def sort_product():
+    menu = int(input(
+        "1. sortare ascendentă PRODUCT NAME\n2. sortare descendentă PRODUCT NAME\n3. sortare ascendentă OLD PRICE\n4. sortare descendentă OLD PRICE"
+        "\n5. sortare ascendentă persoana NEW PRICE\n6. sortare descendentă persoană NEW PRICE\n7. sortare ascendentă DISCOUNT"
+        "\n8. sortare descendentă DISCOUNT\n9. sortare descendentă LINK\n10. sortare ascendentă LINK"
+        "\n11. sortare descendentă REVIEWS\n12. sortare ascendentă REVIEWS\n\nSelectati un mod de sortare>> "))
+    if menu == 1:
+        return products_list.sort(key=lambda k: k["PRODUCT NAME"], reverse=False)
+    elif menu == 2:
+        return products_list.sort(key=lambda k: k["PRODUCT NAME"], reverse=True)
+    elif menu == 3:
+        return products_list.sort(key=lambda k: k["OLD PRICE"], reverse=False)
+    elif menu == 4:
+        return products_list.sort(key=lambda k: k["OLD PRICE"], reverse=True)
+    elif menu == 5:
+        return products_list.sort(key=lambda k: k["NEW PRICE"], reverse=False)
+    elif menu == 6:
+        return products_list.sort(key=lambda k: k["NEW PRICE"], reverse=True)
+    elif menu == 7:
+        return products_list.sort(key=lambda k: k["DISCOUNT"], reverse=False)
+    elif menu == 8:
+        return products_list.sort(key=lambda k: k["DISCOUNT"], reverse=True)
+    elif menu == 9:
+        return products_list.sort(key=lambda k: k["LINK"], reverse=False)
+    elif menu == 10:
+        return products_list.sort(key=lambda k: k["LINK"], reverse=True)
+    elif menu == 11:
+        return products_list.sort(key=lambda k: k["REVIEWS"], reverse=False)
+    elif menu == 12:
+        return products_list.sort(key=lambda k: k["REVIEWS"], reverse=True)
+
 
 def save_information_in_excel():
     workbook = xlsxwriter.Workbook("produse.xlsx")
     worksheet = workbook.add_worksheet()
-    col_num = 0
-    for key, value in product.items():
-        worksheet.write(0, col_num, key)
-        worksheet.write_column(1, col_num, value)
-        col_num += 1
+    row_num = 0
+    for product in products_list:
+        col_num = 0
+        row_num += 1
+        for key, value in product.items():
+            worksheet.write(row_num, col_num, value)
+            col_num += 1
     workbook.close()
     return True
 
 
 def main():
 
-
     print("!!!WEB SCRAPPING EMAG.RO!!!")
     nume_produs = input("Introduceti numele produsului>> ")
     numar_pagini = int(input("Introduceti numarul de pagini emag>> "))
+
     count = 1
     while count <= numar_pagini:
         print(count)
@@ -77,18 +107,7 @@ def main():
         get_product_information(url)
         count += 1
 
-    product["PRODUCT NAME"] = name_list
-    product["OLD PRICE"] = old_price_list
-    product["NEW PRICE"] = new_price_list
-    product["DISCOUNT"] = discount_list
-    product["REVIEWS"] = reviews_list
-    product["LINK"] = link_list
-
-    dataframe = pd.DataFrame(product)
-    dataframe.sort_values(by="PRODUCT NAME", ascending=True, kind="mergesort")
-    print(dataframe)
-
-
+    sort_product()
 
     while True:
         choice = input("Doriti sa salvati informatiile din web scraping intr-un fisier excel ? (Y/N)>>")
@@ -107,6 +126,4 @@ def main():
 
 
 main()
-
-df = pd.DataFrame(product)
-df.sort_values
+print(products_list)
