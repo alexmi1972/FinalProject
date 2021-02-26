@@ -8,7 +8,7 @@ products_list = []
 
 def get_emag_product_url(nume_produs,numar_pagini):
     url = requests.get(f"https://www.emag.ro/{nume_produs}/p{numar_pagini}/c")
-    return bs(url.content)
+    return bs(url.content, "lxml")
 
 def get_product_information(html_code):
     for product_code in html_code.find_all("div", class_="card-item js-product-data"):
@@ -143,11 +143,12 @@ def main():
 
     print("!!!WEB SCRAPPING EMAG.RO!!!")
     nume_produs = input("Introduceti numele produsului>> ")
-    numar_pagini = int(input("Introduceti numarul de pagini emag>> "))
-
+    url = get_emag_product_url(nume_produs, 1)
+    numar_pagini = int("".join([code for code in url.find_all("a", class_="js-change-page hidden-xs hidden-sm")[-1]]))
+    print(f"Numarul pagini produse: {numar_pagini}")
     count = 1
     while count <= numar_pagini:
-        print(count)
+        print(f"Pagina in lucru: {count}")
         url = get_emag_product_url(nume_produs, str(count))
         get_product_information(url)
         count += 1
