@@ -79,6 +79,28 @@ def sort_product():
     elif menu == 12:
         return products_list.sort(key=lambda k: k["REVIEWS"], reverse=True)
 
+def smallest_price_products():
+    products_list.sort(key=lambda k: k["NEW PRICE"], reverse=False)
+    df = pd.DataFrame(products_list[0:5])
+    workbook = xlsxwriter.Workbook("cheapest_products.xlsx")
+    worksheet = workbook.add_worksheet()
+    choice = int(input("Cate produse care au pretul cel mai mic doriti sa fie afisate ?>> "))
+    col_num = 0
+    for key in products_list[0].keys():
+        worksheet.write(0, col_num, key)
+        col_num += 1
+    row_num = 0
+    for product in products_list[0:choice]:
+        col_num = 0
+        row_num += 1
+        for key, value in product.items():
+            worksheet.write(row_num, col_num, value)
+            col_num += 1
+    workbook.close()
+    return True
+
+
+
 
 def save_information_in_excel():
     workbook = xlsxwriter.Workbook("produse.xlsx")
@@ -150,7 +172,26 @@ def main():
         else:
             print("Nu am inteles!!!")
 
-    chart_xlsx()
+    while True:
+        choice = input("Doriti sa se efectueze un top de cele mai ieftine produse ? (Y/N)>>").upper()
+        if choice == "Y":
+            smallest_price_products()
+            break
+        elif choice == "N":
+            break
+        else:
+            print("Nu am inteles!!!")
+
+    while True:
+        choice = input("Doriti sa se realizeze un chart dupa rulare ? (Y/N)>>").upper()
+        if choice == "Y":
+            chart_xlsx()
+            break
+        elif choice == "N":
+            break
+        else:
+            print("Nu am inteles!!!")
+
 
 
 main()
