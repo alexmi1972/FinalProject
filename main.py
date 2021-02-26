@@ -2,10 +2,9 @@ import requests
 from bs4 import BeautifulSoup as bs
 import xlsxwriter
 import pandas as pd
-
+import plotly.graph_objects as go
 
 products_list = []
-
 
 def get_emag_product_url(nume_produs,numar_pagini):
     url = requests.get(f"https://www.emag.ro/{nume_produs}/p{numar_pagini}/c")
@@ -48,10 +47,11 @@ def get_product_information(html_code):
         products_list.append(product)
     return True
 
+
 def sort_product():
     menu = int(input(
         "1. sortare ascendentă PRODUCT NAME\n2. sortare descendentă PRODUCT NAME\n3. sortare ascendentă OLD PRICE\n4. sortare descendentă OLD PRICE"
-        "\n5. sortare ascendentă persoana NEW PRICE\n6. sortare descendentă persoană NEW PRICE\n7. sortare ascendentă DISCOUNT"
+        "\n5. sortare ascendentă NEW PRICE\n6. sortare descendentă NEW PRICE\n7. sortare ascendentă DISCOUNT"
         "\n8. sortare descendentă DISCOUNT\n9. sortare descendentă LINK\n10. sortare ascendentă LINK"
         "\n11. sortare descendentă REVIEWS\n12. sortare ascendentă REVIEWS\n\nSelectati un mod de sortare>> "))
     if menu == 1:
@@ -83,6 +83,10 @@ def sort_product():
 def save_information_in_excel():
     workbook = xlsxwriter.Workbook("produse.xlsx")
     worksheet = workbook.add_worksheet()
+    col_num = 0
+    for key in products_list[0].keys():
+        worksheet.write(0, col_num, key)
+        col_num += 1
     row_num = 0
     for product in products_list:
         col_num = 0
@@ -92,6 +96,25 @@ def save_information_in_excel():
             col_num += 1
     workbook.close()
     return True
+
+def chart_xlsx():
+    excel_file = "produse.xlsx"
+    df = pd.read_excel(excel_file)
+    data = [go.Scatter(x=df["OLD PRICE"], y=df["DISCOUNT"])]
+    chart = go.Figure(data)
+    chart.show()
+    # workbook = xlsxwriter.Workbook("chart.xlsx")
+    # worksheet = workbook.add_worksheet()
+    # choice = input("Introduceti pe ce categorie se va efectua chart>> ")
+    # chart_data = []
+    # for product in products_list:
+    #     for key,value in product.items():
+    #         if key == choice:
+    #             chart_data.append(value)
+    # chart = workbook.add_chart({"type": "line"})
+    # chart.add_series({"values": "=products!$B$2:$B$60", "name": choice})
+    # worksheet.insert_chart("A1", chart)
+    # workbook.close()
 
 
 def main():
@@ -107,10 +130,18 @@ def main():
         get_product_information(url)
         count += 1
 
-    sort_product()
+    while True:
+        choice = input("Doriti sa sortati informatiile obtinute din web scraping ? (Y/N)>>").upper()
+        if choice == "Y":
+            sort_product()
+            break
+        elif choice == "N":
+            break
+        else:
+            print("Nu am inteles!!!")
 
     while True:
-        choice = input("Doriti sa salvati informatiile din web scraping intr-un fisier excel ? (Y/N)>>")
+        choice = input("Doriti sa salvati informatiile din web scraping intr-un fisier excel ? (Y/N)>>").upper()
         if choice == "Y":
             save_information_in_excel()
             break
@@ -119,11 +150,7 @@ def main():
         else:
             print("Nu am inteles!!!")
 
-
-
-
-
+    chart_xlsx()
 
 
 main()
-print(products_list)
